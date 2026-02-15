@@ -72,13 +72,13 @@ Visit `http://localhost:5173` and add your Gemini API key in Settings.
 ## Screenshots
 
 ### Dashboard
-![Dashboard](https://via.placeholder.com/800x450/000000/a3e635?text=Dashboard)
+![Dashboard](./public/dashboard.png)
 
 ### Live Debate
-![Live Debate](https://via.placeholder.com/800x450/000000/a3e635?text=Live+Debate)
+![Live Debate](./public/livedebate.png)
 
 ### Analytics
-![Analytics](https://via.placeholder.com/800x450/000000/a3e635?text=Analytics)
+![Analytics](./public/analytics.png)
 
 ---
 
