@@ -107,13 +107,6 @@ Contributions welcome! Please open an issue or submit a pull request.
 
 ---
 
-## Author
-
-**Abbas Mir**  
-[GitHub](https://github.com/abbasmir12) • [LinkedIn](https://linkedin.com/in/abbasmir)
-
----
-
 <div align="center">
 
 **Built with GitHub Copilot CLI**
