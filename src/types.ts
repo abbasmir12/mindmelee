@@ -70,6 +70,7 @@ export enum AppView {
   SETTINGS = 'SETTINGS',
   ACTIVITY = 'ACTIVITY',
   PERSONA = 'PERSONA',
+  ACHIEVEMENTS = 'ACHIEVEMENTS',
 }
 
 /**

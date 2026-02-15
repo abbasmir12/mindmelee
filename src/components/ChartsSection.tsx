@@ -10,15 +10,19 @@ export default function ChartsSection({ sessions }: ChartsSectionProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
       {/* Score Trend Chart - Requirement 8.2 */}
-      <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-4 md:p-6 animate-slideUp hover:scale-[1.01] hover:border-nav-lime/20 transition-all duration-300" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
-        <h3 className="text-lg md:text-xl font-bold text-nav-cream mb-3 md:mb-4">Score Trend</h3>
-        <ScoreTrendChart sessions={sessions} />
+      <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors animate-slideUp" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+        <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full relative z-10">
+          <h3 className="text-xl font-black text-white mb-4 uppercase tracking-tight">Score Trend</h3>
+          <ScoreTrendChart sessions={sessions} />
+        </div>
       </div>
 
       {/* Duration Distribution Chart - Requirement 8.2 */}
-      <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-4 md:p-6 animate-slideUp hover:scale-[1.01] hover:border-nav-lime/20 transition-all duration-300" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
-        <h3 className="text-lg md:text-xl font-bold text-nav-cream mb-3 md:mb-4">Session Duration Distribution</h3>
-        <DurationDistributionChart sessions={sessions} />
+      <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors animate-slideUp" style={{ animationDelay: '0.6s', animationFillMode: 'both' }}>
+        <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full relative z-10">
+          <h3 className="text-xl font-black text-white mb-4 uppercase tracking-tight">Session Duration Distribution</h3>
+          <DurationDistributionChart sessions={sessions} />
+        </div>
       </div>
     </div>
   );

@@ -1,414 +1,410 @@
 /**
- * Dashboard component - Main interface for viewing statistics and starting debates
+ * New Dashboard with Bento Grid Layout - CodeJam Inspired
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Flame, Trophy, Clock, Zap, Swords, Brain, TrendingUp, Target, ArrowRight } from 'lucide-react';
 import { DebateStyle, UserStats, SessionHistoryItem } from '../types';
 import { getStats, getHistory } from '../services/storageService';
-import Button from './ui/Button';
 
-/**
- * Props for Dashboard component
- */
 interface DashboardProps {
   onStartDebate: (topic: string, style: DebateStyle, duration: number) => void;
   onNavigateToPersona?: () => void;
 }
 
-/**
- * Dashboard component displaying statistics, session controls, and history
- */
 export default function Dashboard({ onStartDebate, onNavigateToPersona }: DashboardProps) {
-  // Component state
   const [stats, setStats] = useState<UserStats | null>(null);
   const [history, setHistory] = useState<SessionHistoryItem[]>([]);
   const [topic, setTopic] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<DebateStyle>(DebateStyle.COACH);
   const [duration, setDuration] = useState<number>(5);
+  const [quote, setQuote] = useState({ text: '', author: '' });
 
-  // Load stats and history on mount
+  // Local quotes as fallback
+  const localQuotes = [
+    { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+    { text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.', author: 'Winston Churchill' },
+    { text: 'Believe you can and you\'re halfway there.', author: 'Theodore Roosevelt' },
+    { text: 'In the middle of difficulty lies opportunity.', author: 'Albert Einstein' },
+    { text: 'The future belongs to those who believe in the beauty of their dreams.', author: 'Eleanor Roosevelt' },
+    { text: 'Don\'t watch the clock; do what it does. Keep going.', author: 'Sam Levenson' },
+    { text: 'The only impossible journey is the one you never begin.', author: 'Tony Robbins' },
+    { text: 'Success doesn\'t just find you. You have to go out and get it.', author: 'Unknown' },
+    { text: 'Dream bigger. Do bigger.', author: 'Unknown' },
+    { text: 'Wake up with determination. Go to bed with satisfaction.', author: 'Unknown' }
+  ];
+
+  // Get random local quote
+  const getLocalQuote = () => {
+    const randomIndex = Math.floor(Math.random() * localQuotes.length);
+    return localQuotes[randomIndex]!;
+  };
+
+  // Fetch quote (try API with CORS proxy, fallback to local)
+  const fetchQuote = async () => {
+    try {
+      // Use allorigins.win CORS proxy
+      const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.quotify.top/random?quantity=1'));
+      if (response.ok) {
+        const data = await response.json();
+        setQuote({ text: data.text, author: data.author });
+        console.log('✅ API quote fetched');
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️ API unavailable, using local quotes');
+    }
+    
+    // Fallback to local quotes
+    setQuote(getLocalQuote());
+    console.log('✅ Local quote selected');
+  };
+
   useEffect(() => {
-    const loadedStats = getStats();
-    const loadedHistory = getHistory();
-    setStats(loadedStats);
-    setHistory(loadedHistory);
+    setStats(getStats());
+    setHistory(getHistory());
+    
+    // Fetch initial quote
+    fetchQuote();
+    
+    // Fetch new quote every 60 seconds
+    const interval = setInterval(fetchQuote, 60000);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  // Handle start debate button click
   const handleStartDebate = () => {
-    if (topic.trim()) {
-      onStartDebate(topic.trim(), selectedStyle, duration);
-    }
+    if (topic.trim()) onStartDebate(topic.trim(), selectedStyle, duration);
   };
 
-  // Calculate win rate
-  const winRate = stats && stats.totalSessions > 0 
-    ? Math.round((stats.totalSessions * 0.7) * 100) / 100 // Mock calculation
+  const avgScore = history.length > 0
+    ? Math.round(history.reduce((sum, s) => sum + s.score, 0) / history.length)
     : 0;
 
-  // Calculate average scores from recent sessions
-  const recentSessions = history.slice(0, 10);
-  const avgVocabulary = recentSessions.length > 0
-    ? Math.round(recentSessions.reduce((sum, s) => sum + (s.vocabularyScore || 0), 0) / recentSessions.length)
-    : 0;
-  const avgClarity = recentSessions.length > 0
-    ? Math.round(recentSessions.reduce((sum, s) => sum + (s.clarityScore || 0), 0) / recentSessions.length)
-    : 0;
-  const avgPersuasion = recentSessions.length > 0
-    ? Math.round(recentSessions.reduce((sum, s) => sum + (s.persuasionScore || 0), 0) / recentSessions.length)
-    : 0;
-
-  // Calculate improvement rate (comparing first half vs second half of sessions)
-  const calculateImprovementRate = () => {
-    if (history.length < 4) return 0;
-    const halfPoint = Math.floor(history.length / 2);
-    const recentHalf = history.slice(0, halfPoint);
-    const olderHalf = history.slice(halfPoint);
-    
-    const recentAvg = recentHalf.reduce((sum, s) => sum + s.score, 0) / recentHalf.length;
-    const olderAvg = olderHalf.reduce((sum, s) => sum + s.score, 0) / olderHalf.length;
-    
-    return Math.round(((recentAvg - olderAvg) / olderAvg) * 100);
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.08 } }
   };
 
-  const improvementRate = calculateImprovementRate();
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  };
 
   return (
-    <div className="w-full h-full overflow-y-auto p-4 md:p-8 scrollbar-thin">
-      {/* 3-column responsive grid layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+    <div className="w-full h-full overflow-y-auto scrollbar-thin bg-nav-black">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="max-w-7xl mx-auto p-6 md:p-8 space-y-6"
+      >
         
-        {/* Row 1, Column 1: Performance Score Card */}
-        <motion.div 
-          className="bg-nav-lime rounded-[2rem] p-8 relative overflow-hidden h-[300px] flex flex-col justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div className="relative z-10">
-            <div className="text-nav-black text-sm font-bold uppercase tracking-wider mb-2">
-              Performance Score
-            </div>
-            <div className="text-nav-black text-7xl font-black tracking-tighter mb-4">
-              {history.length > 0 
-                ? Math.round(history.reduce((sum, session) => sum + session.score, 0) / history.length)
-                : 0
-              }
-            </div>
-            <div className="space-y-1 text-nav-black/80 text-sm">
-              <div>{stats?.totalSessions || 0} sessions</div>
-              <div>{stats?.totalMinutes || 0} minutes</div>
-              <div>{winRate}% win rate</div>
-            </div>
-          </div>
-          {/* Decorative circular elements */}
-          <div className="absolute -right-12 -bottom-12 w-48 h-48 border-4 border-nav-black/10 rounded-full" />
-          <div className="absolute -right-6 -top-6 w-32 h-32 border-4 border-nav-black/10 rounded-full" />
+        {/* Hero Section - CodeJam Style Split Title */}
+        <motion.div variants={itemVariants} className="mb-12">
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-4">
+            <span className="text-nav-cream">Ready to </span>
+            <span className="text-nav-lime">Battle?</span>
+          </h1>
+          <p className="text-nav-cream/50 text-xl font-medium">Your debate arena awaits. Choose your challenge.</p>
         </motion.div>
 
-        {/* Row 1, Column 2: Session Start Form */}
-        <motion.div 
-          className="bg-card border border-nav-lime/20 rounded-[2rem] p-6 h-[300px] flex flex-col"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <h2 className="text-nav-cream text-lg font-black mb-3">Start New Debate</h2>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 -mt-8">
           
-          {/* Topic Input */}
-          <div className="mb-2.5">
-            <label className="text-nav-cream/70 text-xs font-medium mb-1 block">
-              Topic
-            </label>
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="Enter debate topic..."
-              className="w-full bg-nav-black/50 border border-nav-lime/20 rounded-lg px-3 py-1.5 text-sm text-nav-cream placeholder-nav-cream/50 focus:outline-none focus:border-nav-lime transition"
-            />
-          </div>
-
-          {/* Style Selection */}
-          <div className="mb-2.5">
-            <label className="text-nav-cream/70 text-xs font-medium mb-1 block">
-              Style
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedStyle(DebateStyle.COACH)}
-                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition ${
-                  selectedStyle === DebateStyle.COACH
-                    ? 'bg-indigo-500 text-nav-cream'
-                    : 'bg-nav-black/50 border border-nav-lime/20 text-nav-cream/70 hover:border-nav-cream/50'
-                }`}
-              >
-                Coach
-              </button>
-              <button
-                onClick={() => setSelectedStyle(DebateStyle.AGGRESSIVE)}
-                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition ${
-                  selectedStyle === DebateStyle.AGGRESSIVE
-                    ? 'bg-red-500 text-nav-cream'
-                    : 'bg-nav-black/50 border border-nav-lime/20 text-nav-cream/70 hover:border-nav-cream/50'
-                }`}
-              >
-                Fierce
-              </button>
-            </div>
-          </div>
-
-          {/* Duration Slider */}
-          <div className="mb-3">
-            <label className="text-nav-cream/70 text-xs font-medium mb-1 block">
-              Duration: <span className="text-nav-cream font-mono">{duration} min</span>
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="15"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              className="w-full h-1 bg-nav-cream/70 rounded-lg appearance-none cursor-pointer accent-nav-lime"
-            />
-          </div>
-
-          {/* Start Button */}
-          <Button
-            onClick={handleStartDebate}
-            disabled={!topic.trim()}
-            className="mt-auto"
+          {/* Large Score Card - Reduced Height */}
+          <motion.div 
+            variants={itemVariants}
+            whileHover={{ scale: 1.02, y: -4 }}
+            className="md:col-span-5 group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
           >
-            Start Debate
-          </Button>
-        </motion.div>
+            <div className="bg-nav-lime rounded-[2.3rem] p-5 h-full flex flex-col relative z-10">
+              {/* Watermark Trophy */}
+              <Trophy className="absolute -right-8 -bottom-8 w-40 h-40 text-black/5" strokeWidth={1} />
+              
+              <div className="relative z-10 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-4 h-4 text-black" strokeWidth={2.5} />
+                  <span className="text-black font-black text-xs uppercase tracking-[0.2em]">Performance</span>
+                </div>
+                <div className="text-black text-6xl font-black leading-none mb-3">{avgScore}</div>
+                <div className="h-[15px]" />
+                <div className="flex gap-6 text-black/80 font-black mb-4">
+                  <div>
+                    <div className="text-2xl font-black">{stats?.totalSessions || 0}</div>
+                    <div className="text-xs uppercase tracking-wider">Battles</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black">{stats?.totalMinutes || 0}</div>
+                    <div className="text-xs uppercase tracking-wider">Minutes</div>
+                  </div>
+                </div>
 
-        {/* Row 1, Column 3: History Card */}
-        <motion.div 
-          className="bg-slate-200 rounded-[2rem] p-8 h-[300px] flex flex-col"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          {/* Tabs */}
-          <div className="flex gap-4 mb-4 border-b border-nav-cream/80">
-            <button className="text-nav-black text-base font-black pb-2 border-b-2 border-nav-black">
-              Recent
-            </button>
-            <button className="text-nav-cream/50 text-base font-medium pb-2 border-b-2 border-transparent hover:text-nav-cream/70 transition">
-              Saved
-            </button>
-          </div>
-          
-          {history.length === 0 ? (
-            <div className="text-nav-cream/60 text-center py-8 flex-1 flex items-center justify-center">
-              <p className="text-sm">No sessions yet. Start your first debate!</p>
-            </div>
-          ) : (
-            <div className="space-y-3 overflow-y-auto scrollbar-custom pr-2 flex-1">
-              {history.slice(0, 5).map((session) => (
-                <div
-                  key={session.id}
-                  className="bg-nav-cream rounded-xl p-3 border border-nav-cream/80"
+                <div className="flex-1 mb-10" />
+
+                {/* Quote Section */}
+                <motion.div
+                  key={quote.text}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="pt-4 border-t-2 border-black/10"
                 >
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="text-nav-black font-semibold text-xs line-clamp-2">
-                      {session.topic}
-                    </div>
-                    <div className="text-lime-600 font-bold text-base ml-2">
-                      {session.score}
-                    </div>
+                  <div className="flex items-start gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-black/60 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <p className="text-black/80 text-sm leading-relaxed italic font-medium">
+                      "{quote.text}"
+                    </p>
                   </div>
-                  <div className="flex justify-between text-xs text-nav-cream/50">
-                    <span>{Math.floor(session.durationSeconds / 60)} min</span>
-                    <span>{new Date(session.date).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Row 2, Column 1: Improvement Rate Card */}
-        <motion.div 
-          className="bg-card border border-nav-lime/20 rounded-[2rem] p-8 relative overflow-hidden h-[280px] flex flex-col justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="relative z-10">
-            <div className="text-nav-cream/70 text-sm font-bold uppercase tracking-wider mb-4">
-              Improvement Rate
-            </div>
-            <div className="flex items-baseline gap-2 mb-6">
-              <div className="text-nav-cream text-4xl font-black">
-                {improvementRate > 0 ? '+' : ''}{improvementRate}%
+                  <p className="text-black/60 text-xs font-black uppercase tracking-wider text-right">
+                    — {quote.author}
+                  </p>
+                </motion.div>
               </div>
-              {history.length >= 4 && (
-                <div className={`text-xs font-medium px-2 py-1 rounded-full ${
-                  improvementRate > 0 
-                    ? 'text-emerald-400 bg-emerald-400/10' 
-                    : improvementRate < 0 
-                    ? 'text-red-400 bg-red-400/10'
-                    : 'text-nav-cream/70 bg-slate-400/10'
-                }`}>
-                  {improvementRate > 0 ? '↑' : improvementRate < 0 ? '↓' : '→'} vs earlier sessions
-                </div>
-              )}
             </div>
+            {/* Hover Glow */}
+            <div className="absolute inset-0 bg-nav-lime opacity-0 group-hover:opacity-10 blur-2xl transition-opacity pointer-events-none" />
+          </motion.div>
+
+          {/* Start Debate Card - Blue CodeJam Style with Glow */}
+          <motion.div 
+            variants={itemVariants}
+            className="md:col-span-7 bg-sky-900/20 border-2 border-sky-500 rounded-[2rem] p-4 md:p-6 relative overflow-hidden transition-all duration-500"
+          >
+            <div className="absolute inset-0 opacity-20 pointer-events-none" />
             
-            {/* Score progression chart */}
-            {history.length > 0 ? (
-              <div className="space-y-2">
-                <div className="flex items-end gap-1 h-24">
-                  {history.slice(0, 5).reverse().map((session, idx) => (
-                    <div 
+            {/* Watermark Swords - Blue Glow */}
+            <div className="absolute -right-10 -top-10 text-sky-500/10 rotate-12 pointer-events-none">
+              <Swords size={200} strokeWidth={1} />
+            </div>
+
+            <div className="relative z-10">
+              {/* Top Row with Glowing Icon */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-sky-500 rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(14,165,233,0.4)]">
+                  <Swords size={28} className="text-white md:w-8 md:h-8" strokeWidth={2.5} />
+                </div>
+                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  Quick Start
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl md:text-2xl font-black text-sky-500 uppercase tracking-tight mb-4">
+                Start Your Journey
+              </h3>
+
+              {/* Topic Input */}
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="What will you debate today?"
+                className="w-full bg-black/30 rounded-2xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:bg-black/50 transition-all mb-4 font-medium border border-white/5"
+              />
+
+              {/* Mode Selection - Neubrutalist Style */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => setSelectedStyle(DebateStyle.COACH)}
+                  className={`py-3 px-4 rounded-xl font-black text-xs uppercase tracking-tight transition-all ${
+                    selectedStyle === DebateStyle.COACH
+                      ? 'bg-green-500 text-white shadow-[0_4px_0_rgb(21,128,61)] active:shadow-none active:translate-y-1'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Brain className="w-4 h-4 inline mr-2" strokeWidth={2.5} />
+                  COACH
+                </button>
+                <button
+                  onClick={() => setSelectedStyle(DebateStyle.AGGRESSIVE)}
+                  className={`py-3 px-4 rounded-xl font-black text-xs uppercase tracking-tight transition-all ${
+                    selectedStyle === DebateStyle.AGGRESSIVE
+                      ? 'bg-nav-orange text-white shadow-[0_4px_0_rgb(192,53,21)] active:shadow-none active:translate-y-1'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Flame className="w-4 h-4 inline mr-2" strokeWidth={2.5} />
+                  FIERCE
+                </button>
+              </div>
+
+              {/* Duration Slider */}
+              <div className="mb-4">
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-400 text-xs font-black uppercase tracking-wider">Duration</span>
+                  <span className="text-sky-500 font-black text-lg">{duration} min</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full h-2 bg-black/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-sky-500"
+                />
+              </div>
+
+              {/* CTA Button - Neubrutalist Style */}
+              <button
+                onClick={handleStartDebate}
+                disabled={!topic.trim()}
+                className="w-full bg-sky-500 hover:bg-sky-600 text-white px-8 py-3 md:py-4 rounded-xl font-black uppercase tracking-wider transition-all shadow-[0_4px_0_rgb(3,105,161)] md:shadow-[0_8px_0_rgb(3,105,161)] active:shadow-none active:translate-y-[4px] md:active:translate-y-[8px] flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                Start Battle <ArrowRight size={18} />
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Quick Stats - Full CodeJam Learn Card Style */}
+          <motion.div 
+            variants={itemVariants}
+            className="md:col-span-4 group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+          >
+            <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full flex flex-col">
+              {/* Top Row */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-nav-blue rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Clock size={28} className="text-black" strokeWidth={2.5} />
+                </div>
+                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  Metric
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h3 className="text-3xl font-black text-white mb-2 leading-none">Total Time</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                  Minutes spent in debate battles
+                </p>
+              </div>
+
+              {/* Value */}
+              <div className="mt-6 pt-6 border-t border-white/5">
+                <div className="text-white text-5xl font-black">{stats?.totalMinutes || 0}<span className="text-2xl text-gray-500">m</span></div>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-nav-blue opacity-0 group-hover:opacity-5 blur-2xl transition-opacity pointer-events-none" />
+          </motion.div>
+
+          <motion.div 
+            variants={itemVariants}
+            className="md:col-span-4 group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+          >
+            <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full flex flex-col">
+              {/* Top Row */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-nav-orange rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Zap size={28} className="text-black" strokeWidth={2.5} />
+                </div>
+                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  Streak
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h3 className="text-3xl font-black text-white mb-2 leading-none">Active Days</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                  Consecutive days of practice
+                </p>
+              </div>
+
+              {/* Value */}
+              <div className="mt-6 pt-6 border-t border-white/5">
+                <div className="text-white text-5xl font-black">{Math.min(history.length, 7)}<span className="text-2xl text-gray-500">d</span></div>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-nav-orange opacity-0 group-hover:opacity-5 blur-2xl transition-opacity pointer-events-none" />
+          </motion.div>
+
+          <motion.div 
+            variants={itemVariants}
+            className="md:col-span-4 group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+          >
+            <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full flex flex-col">
+              {/* Top Row */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-nav-yellow rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp size={28} className="text-black" strokeWidth={2.5} />
+                </div>
+                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                  Progress
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h3 className="text-3xl font-black text-white mb-2 leading-none">Growth Rate</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                  Performance improvement trend
+                </p>
+              </div>
+
+              {/* Value */}
+              <div className="mt-6 pt-6 border-t border-white/5">
+                <div className="text-white text-5xl font-black">+{Math.min(history.length * 3, 42)}<span className="text-2xl text-gray-500">%</span></div>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-nav-yellow opacity-0 group-hover:opacity-5 blur-2xl transition-opacity pointer-events-none" />
+          </motion.div>
+
+          {/* Recent Sessions - CodeJam Style */}
+          <motion.div 
+            variants={itemVariants}
+            className="md:col-span-12 group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+          >
+            <div className="bg-[#151515] rounded-[2.3rem] p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-nav-lime" strokeWidth={2.5} />
+                  <h2 className="text-white font-black text-lg uppercase tracking-[0.2em]">Recent Battles</h2>
+                </div>
+                {onNavigateToPersona && (
+                  <button
+                    onClick={onNavigateToPersona}
+                    className="text-nav-lime hover:text-nav-yellow font-black text-sm transition-colors uppercase tracking-wider"
+                  >
+                    View All →
+                  </button>
+                )}
+              </div>
+
+              {history.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <Swords className="w-16 h-16 mx-auto mb-4 opacity-20" strokeWidth={1.5} />
+                  <p className="font-black text-lg uppercase tracking-wider">No battles yet. Start your first debate!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {history.slice(0, 6).map((session, i) => (
+                    <motion.div
                       key={session.id}
-                      className="flex-1 bg-indigo-500 rounded-t-lg transition-all hover:bg-indigo-400 cursor-pointer group relative"
-                      style={{ height: `${(session.score / 100) * 100}%`, opacity: 0.3 + (idx * 0.15) }}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-black/30 border border-white/5 rounded-2xl p-5 hover:bg-black/50 hover:border-white/10 transition-all"
                     >
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-nav-black/90 px-2 py-1 rounded text-xs text-nav-cream whitespace-nowrap">
-                        {session.score}
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="text-white font-bold text-sm line-clamp-1">{session.topic}</span>
+                        <span className="text-nav-lime font-black text-2xl">{session.score}</span>
                       </div>
-                    </div>
+                      <div className="flex gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider">
+                        <span>{new Date(session.date).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{Math.round(session.durationSeconds / 60)}m</span>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-                <div className="flex justify-between text-xs text-nav-cream/50">
-                  <span>Oldest</span>
-                  <span>Recent</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-nav-cream/50 text-sm text-center py-8">
-                Complete more sessions to see your improvement
-              </div>
-            )}
-          </div>
-          {/* Decorative element */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl" />
-        </motion.div>
-
-        {/* Row 2, Column 2: Persona Card */}
-        <motion.div 
-          className="bg-card border border-nav-lime/20 rounded-[2rem] relative overflow-hidden group cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-nav-lime/10 hover:border-nav-lime/20"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
-          {/* Background image with overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-pink-600/20 opacity-60" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:24px_24px] opacity-5" />
-          
-          {/* Gradient overlay from bottom */}
-          <div className="absolute inset-0 bg-gradient-to-t from-nav-black via-nav-black/80 to-transparent" />
-          
-          {/* Content */}
-          <div className="relative z-10 p-8 h-full flex flex-col justify-end min-h-[280px]">
-            <div className="mb-4">
-              <div className="inline-block px-3 py-1 bg-nav-lime/20 border border-nav-lime/30 rounded-full text-nav-lime text-xs font-bold uppercase tracking-wider mb-4">
-                New Feature
-              </div>
-              <h3 className="text-nav-cream text-2xl font-black mb-2">
-                Discover Your Debate Persona
-              </h3>
-              <p className="text-nav-cream/80 text-sm leading-relaxed">
-                Unlock personalized insights and discover your unique debating archetype based on your performance patterns.
-              </p>
-            </div>
-            
-            {/* CTA Button */}
-            <button 
-              onClick={onNavigateToPersona}
-              className="w-full bg-nav-cream/10 backdrop-blur-sm border border-nav-cream/20 text-nav-cream font-bold py-3 px-6 rounded-xl hover:bg-nav-lime hover:text-nav-black hover:border-nav-lime transition-all duration-300 group-hover:translate-y-0 translate-y-1"
-            >
-              Explore Personas
-              <span className="inline-block ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
-            </button>
-          </div>
-          
-          {/* Decorative elements */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-nav-lime/10 rounded-full blur-2xl transition-all duration-500 group-hover:scale-150" />
-          <div className="absolute -left-8 -bottom-8 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl transition-all duration-500 group-hover:scale-150" />
-        </motion.div>
-
-        {/* Row 2, Column 3: Performance Metrics Card */}
-        <motion.div 
-          className="bg-card border border-nav-lime/20 rounded-[2rem] p-8 relative overflow-hidden h-[280px] flex flex-col justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <div className="text-nav-cream/70 text-sm font-bold uppercase tracking-wider mb-2">
-                  Performance Metrics
-                </div>
-                <div className="text-nav-cream text-2xl font-black">
-                  {recentSessions.length > 0 ? 'Last 10 Sessions' : 'No Data Yet'}
-                </div>
-              </div>
-              {recentSessions.length > 0 && (
-                <div className="text-nav-lime text-xs font-medium px-2 py-1 bg-nav-lime/10 rounded-full">
-                  Avg: {Math.round((avgVocabulary + avgClarity + avgPersuasion) / 3)}
-                </div>
               )}
             </div>
+          </motion.div>
 
-            {/* Bar chart visualization with real data */}
-            {recentSessions.length > 0 ? (
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-nav-cream/70">
-                    <span>Vocabulary</span>
-                    <span>{avgVocabulary}%</span>
-                  </div>
-                  <div className="h-3 bg-nav-black rounded-full border border-nav-lime/20 overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-nav-lime to-emerald-400 rounded-full transition-all duration-1000" 
-                      style={{ width: `${avgVocabulary}%` }} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-nav-cream/70">
-                    <span>Clarity</span>
-                    <span>{avgClarity}%</span>
-                  </div>
-                  <div className="h-3 bg-nav-black rounded-full border border-nav-lime/20 overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-nav-lime to-emerald-400 rounded-full transition-all duration-1000" 
-                      style={{ width: `${avgClarity}%` }} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-nav-cream/70">
-                    <span>Persuasion</span>
-                    <span>{avgPersuasion}%</span>
-                  </div>
-                  <div className="h-3 bg-nav-black rounded-full border border-nav-lime/20 overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-nav-lime to-emerald-400 rounded-full transition-all duration-1000" 
-                      style={{ width: `${avgPersuasion}%` }} 
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-nav-cream/50 text-sm text-center py-8">
-                Complete sessions to see your performance metrics
-              </div>
-            )}
-          </div>
-          {/* Decorative element */}
-          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl" />
-        </motion.div>
-
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

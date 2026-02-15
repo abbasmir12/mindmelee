@@ -14,7 +14,8 @@
   }
 
   body {
-    @apply bg-nav-black text-nav-cream font-sans antialiased h-full m-0 p-0;
+    @apply bg-[#111111] text-[#F8F7F2] font-sans antialiased h-full m-0 p-0;
+    overflow-x: hidden;
   }
 
   #root {
@@ -22,51 +23,22 @@
   }
 }
 
-/* Custom scrollbar styles - CodeJam inspired */
-@layer utilities {
-  .scrollbar-custom::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  .scrollbar-custom::-webkit-scrollbar-track {
-    @apply bg-nav-black;
-  }
-  
-  .scrollbar-custom::-webkit-scrollbar-thumb {
-    @apply bg-nav-lime/30 rounded-full;
-  }
-  
-  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    @apply bg-nav-lime/50;
-  }
+/* Custom scrollbar - CodeJam style */
+::-webkit-scrollbar {
+  width: 10px;
+}
 
-  /* Thin scrollbar variant */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-nav-lime/20 rounded-full;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-nav-lime/40;
-  }
+::-webkit-scrollbar-track {
+  background: #111111;
+}
 
-  /* Hide scrollbar but keep functionality */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Decorative patterns */

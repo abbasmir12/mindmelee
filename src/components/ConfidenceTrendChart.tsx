@@ -17,10 +17,12 @@ export default function ConfidenceTrendChart({ sessions }: ConfidenceTrendChartP
 
   if (sessionsWithConfidence.length === 0) {
     return (
-      <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-6 md:p-8">
-        <h3 className="text-nav-cream text-lg md:text-xl font-bold mb-4">Confidence Trend</h3>
-        <div className="text-center py-8">
-          <p className="text-nav-cream/70 text-sm">No confidence data available yet</p>
+      <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden">
+        <div className="bg-[#151515] rounded-[2.3rem] p-6 md:p-8 h-full relative z-10">
+          <h3 className="text-white text-xl font-black mb-4 uppercase tracking-tight">Confidence Trend</h3>
+          <div className="text-center py-8">
+            <p className="text-gray-400 text-sm">No confidence data available yet</p>
+          </div>
         </div>
       </div>
     );
@@ -41,139 +43,127 @@ export default function ConfidenceTrendChart({ sessions }: ConfidenceTrendChartP
   const chartHeight = 200;
 
   return (
-    <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-6 md:p-8">
-      <h3 className="text-nav-cream text-lg md:text-xl font-bold mb-6">Confidence Progression</h3>
-      
-      {/* Chart */}
-      <div className="relative" style={{ height: `${chartHeight}px` }}>
-        {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-nav-cream/50 pr-2">
-          <span>Unstoppable</span>
-          <span>High</span>
-          <span>Medium</span>
-          <span>Low</span>
-        </div>
-
-        {/* Chart area */}
-        <div className="ml-20 h-full relative">
-          {/* Grid lines */}
-          <div className="absolute inset-0 flex flex-col justify-between">
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className="border-t border-nav-lime/10" />
-            ))}
+    <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors">
+      <div className="bg-[#151515] rounded-[2.3rem] p-6 md:p-8 h-full relative z-10">
+        <h3 className="text-white text-xl font-black mb-6 uppercase tracking-tight">Confidence Progression</h3>
+        
+        {/* Chart */}
+        <div className="relative" style={{ height: `${chartHeight}px` }}>
+          {/* Y-axis labels */}
+          <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-500 pr-2 font-bold uppercase">
+            <span>100</span>
+            <span>75</span>
+            <span>50</span>
+            <span>25</span>
           </div>
 
-          {/* Data visualization */}
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            {/* Area fill */}
-            <defs>
-              <linearGradient id="confidenceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="rgb(163, 230, 53)" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="rgb(163, 230, 53)" stopOpacity="0.05" />
-              </linearGradient>
-            </defs>
+          {/* Chart area */}
+          <div className="ml-12 h-full relative">
+            {/* Grid lines */}
+            <div className="absolute inset-0 flex flex-col justify-between">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="border-t border-white/5" />
+              ))}
+            </div>
 
-            {sessionsWithConfidence.length > 1 && (
-              <>
-                {/* Area path */}
-                <path
-                  d={`
-                    M 0,${chartHeight}
-                    ${sessionsWithConfidence.map((session, index) => {
+            {/* Data visualization */}
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+              {/* Area fill */}
+              <defs>
+                <linearGradient id="confidenceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="rgb(163, 230, 53)" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="rgb(163, 230, 53)" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+
+              {sessionsWithConfidence.length > 1 && (
+                <>
+                  {/* Area path */}
+                  <path
+                    d={`
+                      M 0,${chartHeight}
+                      ${sessionsWithConfidence.map((session, index) => {
+                        const x = (index / (sessionsWithConfidence.length - 1)) * 100;
+                        const value = confidenceToValue(session.confidenceLevel);
+                        const y = chartHeight - (value / maxValue) * chartHeight;
+                        return `L ${x}%,${y}`;
+                      }).join(' ')}
+                      L 100%,${chartHeight}
+                      Z
+                    `}
+                    fill="url(#confidenceGradient)"
+                  />
+
+                  {/* Line path */}
+                  <path
+                    d={sessionsWithConfidence.map((session, index) => {
                       const x = (index / (sessionsWithConfidence.length - 1)) * 100;
                       const value = confidenceToValue(session.confidenceLevel);
                       const y = chartHeight - (value / maxValue) * chartHeight;
-                      return `L ${x}%,${y}`;
+                      return `${index === 0 ? 'M' : 'L'} ${x}%,${y}`;
                     }).join(' ')}
-                    L 100%,${chartHeight}
-                    Z
-                  `}
-                  fill="url(#confidenceGradient)"
-                />
-
-                {/* Line path */}
-                <path
-                  d={sessionsWithConfidence.map((session, index) => {
-                    const x = (index / (sessionsWithConfidence.length - 1)) * 100;
-                    const value = confidenceToValue(session.confidenceLevel);
-                    const y = chartHeight - (value / maxValue) * chartHeight;
-                    return `${index === 0 ? 'M' : 'L'} ${x}%,${y}`;
-                  }).join(' ')}
-                  fill="none"
-                  stroke="rgb(163, 230, 53)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </>
-            )}
-
-            {/* Data points */}
-            {sessionsWithConfidence.map((session, index) => {
-              const x = (index / Math.max(sessionsWithConfidence.length - 1, 1)) * 100;
-              const value = confidenceToValue(session.confidenceLevel);
-              const y = chartHeight - (value / maxValue) * chartHeight;
-              
-              return (
-                <g key={session.id}>
-                  <circle
-                    cx={`${x}%`}
-                    cy={y}
-                    r="5"
-                    fill="rgb(163, 230, 53)"
-                    stroke="rgb(24, 24, 27)"
-                    strokeWidth="2"
+                    fill="none"
+                    stroke="rgb(163, 230, 53)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                  <circle
-                    cx={`${x}%`}
-                    cy={y}
-                    r="8"
-                    fill="transparent"
-                    className="hover:fill-nav-lime/20 transition-all cursor-pointer"
-                  >
-                    <title>{`${session.confidenceLevel} - ${new Date(session.date).toLocaleDateString()}`}</title>
-                  </circle>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-      </div>
+                </>
+              )}
 
-      {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-4 justify-center text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <span className="text-nav-cream/70">Low</span>
+              {/* Data points */}
+              {sessionsWithConfidence.map((session, index) => {
+                const x = (index / Math.max(sessionsWithConfidence.length - 1, 1)) * 100;
+                const value = confidenceToValue(session.confidenceLevel);
+                const y = chartHeight - (value / maxValue) * chartHeight;
+                
+                return (
+                  <g key={session.id}>
+                    <circle
+                      cx={`${x}%`}
+                      cy={y}
+                      r="5"
+                      fill="rgb(163, 230, 53)"
+                      stroke="rgb(21, 21, 21)"
+                      strokeWidth="2"
+                    />
+                    <circle
+                      cx={`${x}%`}
+                      cy={y}
+                      r="8"
+                      fill="transparent"
+                      className="hover:fill-nav-lime/20 transition-all cursor-pointer"
+                    >
+                      <title>{`${session.confidenceLevel} - ${new Date(session.date).toLocaleDateString()}`}</title>
+                    </circle>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-400" />
-          <span className="text-nav-cream/70">Medium</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-nav-lime" />
-          <span className="text-nav-cream/70">High</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-400" />
-          <span className="text-nav-cream/70">Unstoppable</span>
-        </div>
-      </div>
 
-      {/* Stats summary */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        {['Low', 'Medium', 'High', 'Unstoppable'].map(level => {
-          const count = sessionsWithConfidence.filter(s => s.confidenceLevel === level).length;
-          const percentage = Math.round((count / sessionsWithConfidence.length) * 100);
-          
-          return (
-            <div key={level} className="bg-nav-black/50 rounded-xl p-3 text-center">
-              <div className="text-nav-cream/70 text-xs mb-1">{level}</div>
-              <div className="text-nav-cream text-lg font-bold">{count}</div>
-              <div className="text-nav-cream/50 text-xs">{percentage}%</div>
-            </div>
-          );
-        })}
+        {/* Stats summary */}
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { level: 'Low', color: 'bg-red-500' },
+            { level: 'Medium', color: 'bg-amber-500' },
+            { level: 'High', color: 'bg-nav-lime' },
+            { level: 'Unstoppable', color: 'bg-emerald-500' }
+          ].map(({ level, color }) => {
+            const count = sessionsWithConfidence.filter(s => s.confidenceLevel === level).length;
+            const percentage = Math.round((count / sessionsWithConfidence.length) * 100);
+            
+            return (
+              <div key={level} className="bg-[#111] border border-white/10 rounded-xl p-3 text-center">
+                <div className={`w-3 h-3 ${color} rounded-full mx-auto mb-2`} />
+                <div className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{level}</div>
+                <div className="text-white text-2xl font-black">{count}</div>
+                <div className="text-gray-500 text-xs font-bold">{percentage}%</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

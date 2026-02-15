@@ -126,51 +126,32 @@ function Activity({ onBack }: ActivityProps) {
         ) : (
           <>
             {/* Header with Time Filters */}
-            <div className="mb-6 md:mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-nav-cream mb-4 md:mb-6">Activity Overview</h1>
+            <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+              <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase text-[#FDF9F0] leading-[0.9]">
+                Activity<br/>
+                <span className="text-sky-500">Dashboard</span>
+              </h1>
               
-              {/* Time Filter Buttons - Requirements 4.1, 4.3, 4.4, 8.1 */}
-              <div className="flex flex-wrap gap-2 md:gap-3">
-                <button
-                  onClick={() => setTimeFilter('7d')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-300 ${
-                    timeFilter === '7d'
-                      ? 'bg-nav-lime text-void scale-105 shadow-lg shadow-nav-lime/20'
-                      : 'bg-card text-nav-cream/70 hover:text-nav-cream hover:scale-105 hover:shadow-md border border-nav-lime/20'
-                  }`}
-                >
-                  <span className="hidden sm:inline">Last </span>7<span className="hidden sm:inline"> Days</span><span className="sm:hidden">d</span>
-                </button>
-                <button
-                  onClick={() => setTimeFilter('30d')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-300 ${
-                    timeFilter === '30d'
-                      ? 'bg-nav-lime text-void scale-105 shadow-lg shadow-nav-lime/20'
-                      : 'bg-card text-nav-cream/70 hover:text-nav-cream hover:scale-105 hover:shadow-md border border-nav-lime/20'
-                  }`}
-                >
-                  <span className="hidden sm:inline">Last </span>30<span className="hidden sm:inline"> Days</span><span className="sm:hidden">d</span>
-                </button>
-                <button
-                  onClick={() => setTimeFilter('90d')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-300 ${
-                    timeFilter === '90d'
-                      ? 'bg-nav-lime text-void scale-105 shadow-lg shadow-nav-lime/20'
-                      : 'bg-card text-nav-cream/70 hover:text-nav-cream hover:scale-105 hover:shadow-md border border-nav-lime/20'
-                  }`}
-                >
-                  <span className="hidden sm:inline">Last </span>90<span className="hidden sm:inline"> Days</span><span className="sm:hidden">d</span>
-                </button>
-                <button
-                  onClick={() => setTimeFilter('all')}
-                  className={`px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-300 ${
-                    timeFilter === 'all'
-                      ? 'bg-nav-lime text-void scale-105 shadow-lg shadow-nav-lime/20'
-                      : 'bg-card text-nav-cream/70 hover:text-nav-cream hover:scale-105 hover:shadow-md border border-nav-lime/20'
-                  }`}
-                >
-                  All Time
-                </button>
+              {/* Time Filter Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: '7d', label: '7 Days' },
+                  { value: '30d', label: '30 Days' },
+                  { value: '90d', label: '90 Days' },
+                  { value: 'all', label: 'All Time' },
+                ].map(filter => (
+                  <button
+                    key={filter.value}
+                    onClick={() => setTimeFilter(filter.value as TimeFilter)}
+                    className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-wide transition-all ${
+                      timeFilter === filter.value
+                        ? 'bg-white text-black' 
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
               </div>
             </div>
 

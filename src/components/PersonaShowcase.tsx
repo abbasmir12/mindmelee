@@ -1,349 +1,347 @@
 /**
- * PersonaShowcase - Main container component for the persona feature
- * Displays user's debate persona with interactive 3D elements and analytics
+ * PersonaShowcase - CodeJam style with blue/lime/orange theme
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
-import { PersonaHero } from './PersonaHero';
-import { PersonaDetails } from './PersonaDetails';
-import { PersonaEvolution } from './PersonaEvolution';
-import { ArchetypeExplorer } from './ArchetypeExplorer';
-import { PersonaService } from '@/services/personaService';
+import { Brain, Heart, Scale, Sword, Lightbulb, Book, Star, Target, Check, Lock, Sparkles } from 'lucide-react';
+import { PersonaService, ARCHETYPE_DEFINITIONS } from '@/services/personaService';
 import { getHistory } from '@/services/storageService';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { sanitizeSessionHistory, validateArchetypes, validatePersonaArchetype } from '@/utils/personaValidation';
-import type { PersonaArchetype, PersonaTrait, PersonaEvolution as PersonaEvolutionType } from '@/types';
+import { SplineScene } from './ui/spline';
+import type { PersonaArchetype, PersonaTrait } from '@/types';
 
 interface PersonaShowcaseProps {
   onBack: () => void;
 }
 
-/**
- * PersonaShowcase Component
- * Main view for exploring user's debate persona
- */
-export default function PersonaShowcase({ onBack }: PersonaShowcaseProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const iconMap: Record<string, any> = {
+  brain: Brain,
+  heart: Heart,
+  scale: Scale,
+  sword: Sword,
+  lightbulb: Lightbulb,
+  book: Book,
+  star: Star,
+  target: Target,
+};
+
+export default function PersonaShowcase(_props: PersonaShowcaseProps) {
   const [persona, setPersona] = useState<{
     archetype: PersonaArchetype;
     traits: PersonaTrait[];
-    evolution: PersonaEvolutionType[];
   } | null>(null);
-  const [selectedArchetype, setSelectedArchetype] = useState<PersonaArchetype | null>(null);
-  const [allArchetypes, setAllArchetypes] = useState<PersonaArchetype[]>([]);
-  const prefersReducedMotion = useReducedMotion();
+  const [thoughtIndex, setThoughtIndex] = useState(0);
+  
+  // Initialize random thoughts once
+  const [thoughts] = useState(() => {
+    const allThoughts = [
+      'Sounds good!',
+      'Keep practicing to unlock new archetypes!',
+      'Ready for another battle?',
+      'Interesting strategy you have there!',
+      'I see potential in you!',
+      'One more session perhaps?',
+      'You\'re getting stronger!',
+      'Fascinating debate style!',
+      'Keep up the momentum!',
+      'Your growth is remarkable!',
+      'Challenge accepted?',
+      'Let\'s see what you\'ve got!',
+      'Time to level up!',
+      'You\'re on fire today!',
+      'Impressive progress!',
+    ];
+    const shuffled = [...allThoughts].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 8);
+  });
 
-  // Memoize onBack callback to prevent unnecessary re-renders
-  const handleBack = useCallback(() => {
-    onBack();
-  }, [onBack]);
-
-  // Keyboard navigation: Escape key to go back
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleBack();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleBack]);
-
-  // Load session history and calculate persona on mount
-  useEffect(() => {
-    const loadPersona = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Load session history from storage
-        const rawSessions = getHistory();
-
-        // Validate and sanitize session history data
-        const { sessions, warning } = sanitizeSessionHistory(rawSessions);
-
-        if (warning) {
-          console.warn('Session history validation:', warning);
-        }
-
-        // Calculate persona using PersonaService
-        const result = PersonaService.calculatePersona(sessions);
-
-        // Validate calculation result
-        if (!result || !result.archetype) {
-          throw new Error('Persona calculation failed: invalid result');
-        }
-
-        // Validate the returned archetype
-        if (!validatePersonaArchetype(result.archetype)) {
-          throw new Error('Persona calculation returned invalid archetype data');
-        }
-
-        // Validate traits
-        if (!Array.isArray(result.traits)) {
-          throw new Error('Persona calculation returned invalid traits data');
-        }
-
-        // Calculate evolution timeline
-        const evolution = PersonaService.calculateEvolution(sessions);
-
-        // Validate evolution data
-        if (!Array.isArray(evolution)) {
-          throw new Error('Evolution calculation returned invalid data');
-        }
-
-        // Get all available archetypes with lock status based on user's progress
-        const archetypes = PersonaService.getAllArchetypesWithLockStatus(sessions, result.traits);
-
-        // Validate archetypes
-        const { valid: validArchetypes, errors: archetypeErrors } = validateArchetypes(archetypes);
-
-        if (archetypeErrors.length > 0) {
-          console.error('Archetype validation errors:', archetypeErrors);
-          throw new Error('Failed to load valid archetype definitions');
-        }
-
-        if (validArchetypes.length === 0) {
-          throw new Error('No valid archetypes available');
-        }
-
-        setPersona({
-          archetype: result.archetype,
-          traits: result.traits,
-          evolution,
-        });
-        setSelectedArchetype(result.archetype);
-        setAllArchetypes(validArchetypes);
-      } catch (err) {
-        console.error('Error calculating persona:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPersona();
+    const sessions = getHistory();
+    const result = PersonaService.calculatePersona(sessions);
+    setPersona({
+      archetype: result.archetype,
+      traits: result.traits,
+    });
   }, []);
 
-  // Memoize archetype selection handler
-  const handleSelectArchetype = useCallback((archetypeId: string) => {
-    const archetype = allArchetypes.find((a) => a.id === archetypeId);
-    if (archetype) {
-      setSelectedArchetype(archetype);
-      // Scroll to top smoothly
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [allArchetypes]);
+  // Rotate thoughts every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setThoughtIndex((prev) => (prev + 1) % 8);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Memoize display archetype to prevent recalculation
-  // MUST be before conditional returns to follow Rules of Hooks
-  const displayArchetype = useMemo(() => 
-    selectedArchetype || (persona?.archetype ?? null),
-    [selectedArchetype, persona?.archetype]
+  if (!persona) {
+    return (
+      <div className="min-h-screen bg-nav-black flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-white/20 border-t-nav-lime rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const averageScore = Math.round(
+    persona.traits.reduce((acc, t) => acc + t.value, 0) / persona.traits.length
   );
 
-  // Loading state with skeleton UI
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-nav-black text-nav-cream p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Back button */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-nav-cream/70 hover:text-nav-cream transition mb-8 focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void rounded-lg px-2 py-1"
-            aria-label="Go back to dashboard"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
+  // Add dynamic thoughts with archetype name and score
+  const dynamicThoughts = [
+    `Oh! ${persona.archetype.name}!`,
+    `Your score is ${averageScore}... impressive!`,
+    'You could become the next one with more debates!',
+    'Hmm! No energy for more debates?',
+    'Your debate skills are evolving!',
+  ];
 
-          {/* Loading spinner */}
-          <div className="flex flex-col items-center justify-center min-h-[60vh]" role="status" aria-live="polite">
-            <Loader2 className="w-12 h-12 text-nav-lime animate-spin mb-4" aria-hidden="true" />
-            <p className="text-nav-cream/70 text-lg">Analyzing your debate persona...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-nav-black text-nav-cream p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Back button */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-nav-cream/70 hover:text-nav-cream transition mb-8 focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void rounded-lg px-2 py-1"
-            aria-label="Go back to dashboard"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
-
-          {/* Error message */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center min-h-[60vh] text-center"
-          >
-            <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mb-6" aria-hidden="true">
-              <AlertCircle className="w-12 h-12 text-red-400" />
-            </div>
-            <h2 className="text-3xl font-bold text-nav-cream mb-4">
-              Unable to Load Persona
-            </h2>
-            <p className="text-nav-cream/70 text-lg max-w-md mb-2">
-              {error}
-            </p>
-            <p className="text-nav-cream/50 text-sm max-w-md mb-8">
-              Please try again or check your session history data.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-nav-lime text-void font-semibold rounded-xl hover:bg-lime-500 transition focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void"
-                aria-label="Retry loading persona"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={handleBack}
-                className="px-6 py-3 bg-nav-cream/5 text-nav-cream font-semibold rounded-xl hover:bg-nav-cream/10 transition border border-nav-lime/20 focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void"
-                aria-label="Go back to dashboard"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state - no sessions
-  if (!persona || persona.traits.length === 0) {
-    return (
-      <div className="min-h-screen bg-nav-black text-nav-cream p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Back button */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-nav-cream/70 hover:text-nav-cream transition mb-8 focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void rounded-lg px-2 py-1"
-            aria-label="Go back to dashboard"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
-
-          {/* Empty state message */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center min-h-[60vh] text-center"
-          >
-            <div className="w-24 h-24 rounded-full bg-nav-lime/10 flex items-center justify-center mb-6" aria-hidden="true">
-              <span className="text-5xl">🎭</span>
-            </div>
-            <h2 className="text-3xl font-bold text-nav-cream mb-4">
-              Your Persona Awaits Discovery
-            </h2>
-            <p className="text-nav-cream/70 text-lg max-w-md mb-8">
-              Complete your first debate session to unlock your unique debate persona and
-              discover your strengths, style, and growth potential.
-            </p>
-            <button
-              onClick={handleBack}
-              className="px-6 py-3 bg-nav-lime text-void font-semibold rounded-xl hover:bg-lime-500 transition focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void"
-              aria-label="Start your first debate"
-            >
-              Start Your First Debate
-            </button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // displayArchetype is already memoized at the top of the component
-  // Safe to use here after all conditional returns
-  // At this point, persona is guaranteed to exist (checked by empty state above)
-  if (!displayArchetype || !persona) {
-    return null; // Should never happen, but satisfies TypeScript
-  }
+  // Combine with random thoughts
+  const allDisplayThoughts = [...dynamicThoughts, ...thoughts].slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-nav-black text-nav-cream">
-      <div className="max-w-7xl mx-auto p-6" role="main" aria-label="Persona Showcase">
-        {/* Back button */}
-        <motion.button
-          initial={prefersReducedMotion ? {} : { opacity: 0, x: -20 }}
-          animate={prefersReducedMotion ? {} : { opacity: 1, x: 0 }}
-          onClick={handleBack}
-          className="flex items-center gap-2 text-nav-cream/70 hover:text-nav-cream transition mb-8 focus:outline-none focus:ring-2 focus:ring-nav-lime focus:ring-offset-2 focus:ring-offset-void rounded-lg px-2 py-1"
-          aria-label="Go back to dashboard"
+    <div className="min-h-screen bg-nav-black text-white p-6 md:p-12">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Dashboard</span>
-        </motion.button>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase text-[#FDF9F0] leading-[0.9]">
+            Your<br/>
+            <span className="text-nav-lime">Persona</span>
+          </h1>
+          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+            <Sparkles size={16} className="text-nav-lime" />
+            <span className="text-xs font-bold uppercase tracking-widest text-white/60">Archetype Unlocked</span>
+          </div>
+        </motion.div>
 
-        {/* Hero Section */}
-        <motion.section
-          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-          animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-          transition={prefersReducedMotion ? {} : { duration: 0.5 }}
-          className="mb-12"
-          aria-labelledby="persona-hero-heading"
+        {/* Main Persona Section */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 items-start"
         >
-          <PersonaHero archetype={displayArchetype} traits={persona.traits} />
-        </motion.section>
+          {/* Left: Archetype Card - Smaller */}
+          <div className="bg-gradient-to-br from-lime-900/20 to-green-900/20 border-2 border-transparent rounded-[2rem] p-6 md:p-8 relative overflow-hidden transition-all duration-500 flex items-center justify-center">
+            <div className="absolute inset-0 opacity-20 pointer-events-none" />
+            
+            {/* Large Archetype Icon */}
+            <div className="relative z-10 text-center">
+              <div className="w-24 h-24 md:w-32 md:h-32 bg-lime-500 rounded-[2.5rem] flex items-center justify-center mx-auto mb-4 shadow-[0_0_50px_rgba(132,204,22,0.5)]">
+                {React.createElement(iconMap[persona.archetype.icon] || Brain, { 
+                  size: 60, 
+                  className: "text-black md:w-20 md:h-20",
+                  strokeWidth: 2 
+                })}
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black text-lime-500 uppercase tracking-tight mb-2">
+                {persona.archetype.name}
+              </h2>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs text-gray-400">Overall Score:</span>
+                <span className="text-xl font-black text-white">{averageScore}<span className="text-base text-gray-500">/100</span></span>
+              </div>
+            </div>
+          </div>
 
-        {/* Persona Details Section */}
-        <motion.section
-          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-          animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-          transition={prefersReducedMotion ? {} : { duration: 0.5, delay: 0.2 }}
-          className="mb-16"
-          aria-labelledby="persona-details-heading"
-        >
-          <PersonaDetails archetype={displayArchetype} traits={persona.traits} />
-        </motion.section>
+          {/* Right: 3D Scene with Thought Bubble */}
+          <div className="w-full h-[600px] md:h-[700px] relative -mt-20 md:-mt-32">
+            {/* Thought Bubble - Right side */}
+            <motion.div
+              key={thoughtIndex}
+              initial={{ opacity: 0, x: 20, scale: 0.8 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.8 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-32 md:top-40 -right-4 md:right-4 z-20 w-32 md:w-40"
+            >
+              {/* Thought dots */}
+              <div className="absolute -bottom-6 left-4 flex items-end gap-1">
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-3 h-3 bg-white rounded-full" />
+                <div className="w-4 h-4 bg-white rounded-full" />
+              </div>
+              
+              {/* Thought bubble */}
+              <div className="bg-white text-black px-3 py-2 rounded-full shadow-2xl">
+                <p className="text-[10px] md:text-xs font-bold text-center leading-tight">
+                  {allDisplayThoughts[thoughtIndex]}
+                </p>
+              </div>
+            </motion.div>
 
-        {/* Archetype Explorer Section */}
-        {allArchetypes.length > 1 && (
-          <motion.section
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-            transition={prefersReducedMotion ? {} : { duration: 0.5, delay: 0.3 }}
-            className="mb-16"
-            aria-labelledby="archetype-explorer-heading"
-          >
-            <ArchetypeExplorer
-              currentArchetype={displayArchetype}
-              allArchetypes={allArchetypes}
-              onSelectArchetype={handleSelectArchetype}
+            {/* Robot */}
+            <SplineScene
+              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+              className="w-full h-full"
             />
-          </motion.section>
-        )}
+          </div>
+        </motion.div>
 
-        {/* Evolution Timeline Section */}
-        {persona.evolution.length > 0 && (
-          <motion.section
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
-            transition={prefersReducedMotion ? {} : { duration: 0.5, delay: 0.4 }}
-            className="mb-16"
-            aria-labelledby="persona-evolution-heading"
-          >
-            <PersonaEvolution evolution={persona.evolution} />
-          </motion.section>
-        )}
+        {/* Description Section */}
+        <div className="mb-16 max-w-4xl mx-auto">
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-6 text-white">About Your Archetype</h3>
+          <div className="text-sm md:text-base leading-relaxed space-y-3 bg-[#111] border border-white/10 rounded-[2rem] p-6 md:p-8">
+            {persona.archetype.description.split('. ').map((sentence, idx) => {
+              if (idx === 0) {
+                return (
+                  <p key={idx} className="text-sky-400 text-base md:text-lg italic font-medium">
+                    {sentence}.
+                  </p>
+                );
+              } else if (idx === 1) {
+                return (
+                  <p key={idx} className="text-sky-400 text-base md:text-lg italic font-medium">
+                    {sentence}.
+                  </p>
+                );
+              } else if (idx === 2 || idx === 3) {
+                return (
+                  <p key={idx} className="text-white font-bold">
+                    {sentence}.
+                  </p>
+                );
+              } else {
+                return (
+                  <p key={idx} className="text-gray-300 font-medium">
+                    {sentence}.
+                  </p>
+                );
+              }
+            })}
+          </div>
+        </div>
+
+        {/* Traits Section - Achievements Style */}
+        <div className="mb-16">
+          <h3 className="text-3xl font-black uppercase tracking-tight mb-8 text-white">Your Traits</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {persona.traits.map((trait, index) => (
+              <motion.div
+                key={trait.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+              >
+                <div className="bg-[#151515] rounded-[2.3rem] p-6 h-full flex flex-col">
+                  {/* Top Row */}
+                  <div className="flex justify-between items-start mb-6">
+                    <div 
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+                      style={{ backgroundColor: persona.archetype.color }}
+                    >
+                      <Sparkles size={28} className="text-white" strokeWidth={2.5} />
+                    </div>
+                    <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      Trait
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1">
+                    <h4 className="text-2xl font-black text-white mb-2 leading-none">{trait.name}</h4>
+                    <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                      {trait.description}
+                    </p>
+                  </div>
+
+                  {/* Value */}
+                  <div className="mt-6 pt-6 border-t border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-black uppercase tracking-wider text-gray-500">Score</span>
+                      <span className="text-white text-3xl font-black">{trait.value}<span className="text-lg text-gray-500">/100</span></span>
+                    </div>
+                    <div className="w-full h-2 bg-black/50 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${trait.value}%`,
+                          backgroundColor: persona.archetype.color 
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-5 blur-2xl transition-opacity pointer-events-none"
+                  style={{ backgroundColor: persona.archetype.color }}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* All Archetypes - Learn Card Style */}
+        <div>
+          <h3 className="text-3xl font-black uppercase tracking-tight mb-8 text-white">Explore Archetypes</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {ARCHETYPE_DEFINITIONS.map((archetype, index) => {
+              const Icon = iconMap[archetype.icon] || Brain;
+              const isUnlocked = archetype.id === persona.archetype.id;
+              
+              return (
+                <motion.div
+                  key={archetype.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors"
+                >
+                  <div className="bg-[#151515] rounded-[2.3rem] p-8 h-full flex flex-col relative z-10">
+                    
+                    {/* Top Row */}
+                    <div className="flex justify-between items-start mb-8">
+                      <div 
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        style={{ backgroundColor: archetype.color }}
+                      >
+                        <Icon size={32} className="text-white" strokeWidth={2.5} />
+                      </div>
+                      <div className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${
+                        isUnlocked ? 'bg-nav-lime text-black border-nav-lime' : 'bg-white/5 text-gray-400 border-white/10'
+                      }`}>
+                        {isUnlocked ? 'Current' : 'Locked'}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1">
+                      <h3 className="text-3xl font-black text-white mb-3 leading-none">
+                        {archetype.name}
+                      </h3>
+                      <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                        {archetype.description.slice(0, 120)}...
+                      </p>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="mt-8 pt-8 border-t border-white/5">
+                      <button 
+                        className={`w-full py-4 font-black uppercase tracking-wide rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                          isUnlocked 
+                            ? 'bg-white text-black hover:bg-nav-lime' 
+                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                        }`}
+                        disabled={!isUnlocked}
+                      >
+                        {isUnlocked ? <><Check size={18} /> Your Archetype</> : <><Lock size={18} /> Locked</>}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hover Glow */}
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-5 blur-2xl transition-opacity pointer-events-none"
+                    style={{ backgroundColor: archetype.color }}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </div>
   );

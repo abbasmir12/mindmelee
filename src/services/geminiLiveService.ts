@@ -13,7 +13,6 @@ type ErrorCallback = (error: Error) => void;
 // Constants for Gemini Live API
 const HOST = "generativelanguage.googleapis.com";
 const API_VERSION = "v1alpha";
-const MODEL = "models/gemini-2.0-flash-exp";
 
 /**
  * GeminiLiveService class
@@ -40,6 +39,7 @@ export class GeminiLiveService {
   private isConnecting: boolean = false;
   private isDisconnecting: boolean = false;
   private apiKey: string;
+  private model: string;
 
   // Callback properties
   public onTranscript: TranscriptCallback;
@@ -49,12 +49,14 @@ export class GeminiLiveService {
 
   constructor(
     apiKey: string,
+    model: string,
     onTranscript: TranscriptCallback,
     onStatusChange: StatusChangeCallback,
     onAudioLevel: AudioLevelCallback,
     onError: ErrorCallback
   ) {
     this.apiKey = apiKey;
+    this.model = model;
     this.ai = new GoogleGenAI({ apiKey });
     this.onTranscript = onTranscript;
     this.onStatusChange = onStatusChange;
@@ -155,7 +157,7 @@ export class GeminiLiveService {
         // Send Setup Message with transcription enabled
         const setupMessage = {
           setup: {
-            model: MODEL,
+            model: `models/${this.model}`,
             generation_config: {
               response_modalities: ["AUDIO"],
               speech_config: {
@@ -474,8 +476,11 @@ EVALUATION GUIDELINES:
 CRITICAL INSTRUCTION: Be generous with scoring. If someone is participating and trying to debate, they deserve 50-70 range. Reserve low scores (below 40) ONLY for cases of no participation or completely incoherent responses. Recognize effort and engagement with appropriate scores.`;
 
     try {
+      // Get analysis model from localStorage
+      const analysisModel = localStorage.getItem('mindmelee_analysis_model') || 'gemini-2.5-flash';
+      
       const result = await this.ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: analysisModel,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

@@ -1,4 +1,4 @@
-# Integration Test Checklist for DebateMaster AI
+# Integration Test Checklist for MindMelee
 
 ## Test Status: ✅ PASSED
 

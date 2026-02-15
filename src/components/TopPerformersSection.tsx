@@ -54,66 +54,68 @@ export default function TopPerformersSection({ sessions }: TopPerformersSectionP
   };
 
   return (
-    <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-6 md:p-8 hover:border-nav-lime/20 transition-colors duration-300">
-      <h2 className="text-xl md:text-2xl font-bold text-nav-cream mb-6">
-        🏆 Top Performers
-      </h2>
-      
-      <div className="space-y-4">
-        {sessions.map((session, index) => (
-          <div
-            key={session.id}
-            className={`
-              border-2 ${getBorderColor(index)} ${getBackgroundColor(index)}
-              rounded-2xl p-4 md:p-6
-              transition-all duration-300
-              hover:scale-[1.03] hover:shadow-xl hover:shadow-nav-lime/10
-            `}
-          >
-            <div className="flex items-start justify-between gap-4">
-              {/* Left side: Medal and content */}
-              <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
-                <div className="text-3xl md:text-4xl flex-shrink-0">
-                  {getMedal(index)}
+    <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors">
+      <div className="bg-[#151515] rounded-[2.3rem] p-6 md:p-8 h-full relative z-10">
+        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tight flex items-center gap-2">
+          <span className="text-3xl">🏆</span> Top Performers
+        </h2>
+        
+        <div className="space-y-4">
+          {sessions.map((session, index) => (
+            <div
+              key={session.id}
+              className={`
+                border-2 ${getBorderColor(index)} ${getBackgroundColor(index)}
+                rounded-2xl p-4 md:p-6
+                transition-all duration-300
+                hover:scale-[1.03] hover:shadow-xl
+              `}
+            >
+              <div className="flex items-start justify-between gap-4">
+                {/* Left side: Medal and content */}
+                <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+                  <div className="text-3xl md:text-4xl flex-shrink-0">
+                    {getMedal(index)}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    {/* Topic */}
+                    <h3 className="text-base md:text-lg font-bold text-white mb-2 truncate">
+                      {session.topic}
+                    </h3>
+                    
+                    {/* Date */}
+                    <p className="text-xs md:text-sm text-gray-400 mb-1">
+                      {formatDate(session.date)}
+                    </p>
+                    
+                    {/* Duration */}
+                    <p className="text-xs md:text-sm text-gray-400">
+                      {Math.floor(session.durationSeconds / 60)} min
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  {/* Topic */}
-                  <h3 className="text-base md:text-lg font-bold text-nav-cream mb-2 truncate">
-                    {session.topic}
-                  </h3>
-                  
-                  {/* Date */}
-                  <p className="text-xs md:text-sm text-nav-cream/70 mb-1">
-                    {formatDate(session.date)}
-                  </p>
-                  
-                  {/* Duration */}
-                  <p className="text-xs md:text-sm text-nav-cream/70">
-                    {Math.floor(session.durationSeconds / 60)} min
-                  </p>
-                </div>
-              </div>
-              
-              {/* Right side: Score */}
-              <div className="flex-shrink-0 text-right">
-                <div className="text-3xl md:text-4xl font-black text-nav-lime">
-                  {session.score}
-                </div>
-                <div className="text-xs md:text-sm text-nav-cream/70 font-medium uppercase tracking-wider">
-                  Score
+                {/* Right side: Score */}
+                <div className="flex-shrink-0 text-right">
+                  <div className="text-3xl md:text-4xl font-black text-nav-lime">
+                    {session.score}
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-400 font-black uppercase tracking-wider">
+                    Score
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        
+        {sessions.length < 3 && (
+          <p className="text-sm text-gray-400 mt-4 text-center font-medium">
+            Complete more debates to fill your podium! 🎯
+          </p>
+        )}
       </div>
-      
-      {sessions.length < 3 && (
-        <p className="text-sm text-nav-cream/70 mt-4 text-center">
-          Complete more debates to fill your podium! 🎯
-        </p>
-      )}
     </div>
   );
 }

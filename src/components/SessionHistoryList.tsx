@@ -41,29 +41,33 @@ export default function SessionHistoryList({ sessions }: SessionHistoryListProps
   // Empty state
   if (sessions.length === 0) {
     return (
-      <div className="bg-card rounded-[2rem] p-8 md:p-12 text-center">
-        <div className="flex justify-center mb-4">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-nav-lime/10 flex items-center justify-center">
-            <History className="w-7 h-7 md:w-8 md:h-8 text-nav-lime" />
+      <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden">
+        <div className="bg-[#151515] rounded-[2.3rem] p-8 md:p-12 text-center relative z-10">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-nav-lime/20 flex items-center justify-center">
+              <History className="w-8 h-8 text-nav-lime" />
+            </div>
           </div>
+          <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">No Sessions Yet</h3>
+          <p className="text-sm text-gray-400 max-w-md mx-auto font-medium">
+            Start your first debate to see your session history here. Every practice session helps you
+            improve!
+          </p>
         </div>
-        <h3 className="text-lg md:text-xl font-bold text-nav-cream mb-2">No Sessions Yet</h3>
-        <p className="text-sm md:text-base text-nav-cream/70 max-w-md mx-auto">
-          Start your first debate to see your session history here. Every practice session helps you
-          improve!
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4 md:w-5 md:h-5 text-nav-lime" />
-          <h2 className="text-lg md:text-xl font-bold text-nav-cream">Session History</h2>
-          <span className="text-xs md:text-sm text-nav-cream/70">({sortedSessions.length} total)</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-nav-lime/20 flex items-center justify-center">
+            <History className="w-5 h-5 text-nav-lime" />
+          </div>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">Session History</h2>
+          <span className="text-xs text-gray-500 font-bold">({sortedSessions.length})</span>
         </div>
       </div>
 
@@ -80,10 +84,10 @@ export default function SessionHistoryList({ sessions }: SessionHistoryListProps
           <button
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
-            className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wide transition-all ${
               currentPage === 1
-                ? 'bg-slate-800 text-nav-cream/50 cursor-not-allowed'
-                : 'bg-card text-nav-cream hover:bg-nav-lime/10 hover:text-nav-lime'
+                ? 'bg-[#111] text-gray-600 cursor-not-allowed'
+                : 'bg-sky-500 text-white hover:bg-sky-600 shadow-[0_4px_0_rgb(3,105,161)] active:shadow-none active:translate-y-1'
             }`}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -92,7 +96,7 @@ export default function SessionHistoryList({ sessions }: SessionHistoryListProps
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs md:text-sm text-nav-cream/70">
+            <span className="text-sm text-gray-400 font-bold">
               <span className="hidden sm:inline">Page </span>{currentPage}<span className="hidden sm:inline"> of {totalPages}</span><span className="sm:hidden">/{totalPages}</span>
             </span>
           </div>
@@ -100,13 +104,14 @@ export default function SessionHistoryList({ sessions }: SessionHistoryListProps
           <button
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
-            className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wide transition-all ${
               currentPage === totalPages
-                ? 'bg-slate-800 text-nav-cream/50 cursor-not-allowed'
-                : 'bg-card text-nav-cream hover:bg-nav-lime/10 hover:text-nav-lime'
+                ? 'bg-[#111] text-gray-600 cursor-not-allowed'
+                : 'bg-sky-500 text-white hover:bg-sky-600 shadow-[0_4px_0_rgb(3,105,161)] active:shadow-none active:translate-y-1'
             }`}
           >
-            Next
+            <span className="hidden sm:inline">Next</span>
+            <span className="sm:hidden">Next</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

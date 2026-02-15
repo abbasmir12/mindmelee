@@ -125,65 +125,67 @@ function ActivityHeatMap({ sessions }: ActivityHeatMapProps) {
   }
 
   return (
-    <div className="bg-card border border-nav-lime/10 rounded-[2rem] p-4 md:p-6 hover:border-nav-lime/20 transition-colors duration-300">
-      <h2 className="text-lg md:text-xl font-bold text-nav-cream mb-3 md:mb-4">Activity Heat Map</h2>
-      <p className="text-xs md:text-sm text-nav-cream/70 mb-4 md:mb-6">Last 12 weeks of practice activity</p>
+    <div className="group relative bg-[#111] border border-white/10 rounded-[2.5rem] p-1 overflow-hidden hover:border-white/20 transition-colors">
+      <div className="bg-[#151515] rounded-[2.3rem] p-6 md:p-8 h-full relative z-10">
+        <h2 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Activity Heat Map</h2>
+        <p className="text-xs text-gray-400 mb-6 font-medium">Last 12 weeks of practice activity</p>
 
-      {/* Heat Map Grid - Requirements 3.1, 8.3 */}
-      <div className="overflow-x-auto -mx-2 px-2">
-        <div className="space-y-1 min-w-max">
-          {weeks.map((week, weekIndex) => (
-            <div key={weekIndex} className="flex gap-1">
-              {week.map((cell) => (
-                <div
-                  key={cell.dateString}
-                  className={`w-3 h-3 md:w-4 md:h-4 rounded-sm ${getIntensityColor(
-                    cell.intensity
-                  )} transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-nav-lime cursor-pointer touch-manipulation`}
-                  onMouseEnter={(e) => handleCellHover(cell, e)}
-                  onMouseLeave={handleCellLeave}
-                  onTouchStart={(e) => handleCellHover(cell, e as any)}
-                  onTouchEnd={handleCellLeave}
-                  title={`${formatDate(cell.date)}: ${cell.count} session${
-                    cell.count !== 1 ? 's' : ''
-                  }`}
-                />
-              ))}
+        {/* Heat Map Grid - Requirements 3.1, 8.3 */}
+        <div className="overflow-x-auto -mx-2 px-2">
+          <div className="space-y-1.5 min-w-max">
+            {weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="flex gap-1.5">
+                {week.map((cell) => (
+                  <div
+                    key={cell.dateString}
+                    className={`w-4 h-4 md:w-5 md:h-5 rounded-md ${getIntensityColor(
+                      cell.intensity
+                    )} transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-nav-lime cursor-pointer touch-manipulation`}
+                    onMouseEnter={(e) => handleCellHover(cell, e)}
+                    onMouseLeave={handleCellLeave}
+                    onTouchStart={(e) => handleCellHover(cell, e as any)}
+                    onTouchEnd={handleCellLeave}
+                    title={`${formatDate(cell.date)}: ${cell.count} session${
+                      cell.count !== 1 ? 's' : ''
+                    }`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-3 mt-6 text-xs text-gray-400 font-bold">
+          <span>Less</span>
+          <div className="flex gap-1.5">
+            <div className="w-4 h-4 rounded-md bg-slate-800" />
+            <div className="w-4 h-4 rounded-md bg-nav-lime/20" />
+            <div className="w-4 h-4 rounded-md bg-nav-lime/40" />
+            <div className="w-4 h-4 rounded-md bg-nav-lime/70" />
+            <div className="w-4 h-4 rounded-md bg-nav-lime" />
+          </div>
+          <span>More</span>
+        </div>
+
+        {/* Tooltip - Requirement 3.5 */}
+        {hoveredCell && (
+          <div
+            className="fixed z-50 bg-[#111] border-2 border-nav-lime/30 rounded-xl px-4 py-2 shadow-2xl pointer-events-none"
+            style={{
+              left: `${tooltipPosition.x + 10}px`,
+              top: `${tooltipPosition.y + 10}px`,
+            }}
+          >
+            <div className="text-sm font-black text-white">
+              {formatDate(hoveredCell.date)}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-2 mt-4 md:mt-6 text-xs text-nav-cream/70">
-        <span>Less</span>
-        <div className="flex gap-1">
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm bg-slate-800" />
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm bg-nav-lime/20" />
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm bg-nav-lime/40" />
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm bg-nav-lime/70" />
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm bg-nav-lime" />
-        </div>
-        <span>More</span>
-      </div>
-
-      {/* Tooltip - Requirement 3.5 */}
-      {hoveredCell && (
-        <div
-          className="fixed z-50 bg-nav-black border border-nav-lime/20 rounded-lg px-3 py-2 shadow-xl pointer-events-none"
-          style={{
-            left: `${tooltipPosition.x + 10}px`,
-            top: `${tooltipPosition.y + 10}px`,
-          }}
-        >
-          <div className="text-xs font-medium text-nav-cream">
-            {formatDate(hoveredCell.date)}
+            <div className="text-xs text-gray-400 font-medium">
+              {hoveredCell.count} session{hoveredCell.count !== 1 ? 's' : ''}
+            </div>
           </div>
-          <div className="text-xs text-nav-cream/70">
-            {hoveredCell.count} session{hoveredCell.count !== 1 ? 's' : ''}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
